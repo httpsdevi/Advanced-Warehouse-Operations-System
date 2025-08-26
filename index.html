@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Warehouse Operations System</title>
+    <!-- Include Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .tab-button.active {
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+        
+        /* Custom animation for cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        /* Custom chart styling */
+        .recharts-tooltip-wrapper {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+            border: 1px solid #e5e7eb !important;
+        }
+
+        /* Map styling */
+        #logistics-map {
+            width: 100%;
+            height: 400px;
+            background-color: #e0e0e0;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+            background-image: url('https://placehold.co/1200x400/1e293b/a5f3fc?text=Simulated+Logistics+Map');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .truck-icon {
+            position: absolute;
+            animation: truckMove 10s linear infinite;
+        }
+
+        @keyframes truckMove {
+            0% { left: -5%; top: 50%; }
+            50% { left: 50%; top: 20%; }
+            100% { left: 105%; top: 50%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-7xl mx-auto p-6 sm:p-10 lg:p-12">
+        <header class="mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Advanced Warehouse Operations System</h1>
+            <p class="text-sm sm:text-base text-gray-600">Comprehensive simulation and monitoring platform for warehouse efficiency.</p>
+        </header>
+
+        <main class="bg-white rounded-xl shadow-lg mb-6 p-4 sm:p-6 lg:p-8">
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="flex justify-between sm:justify-start space-x-2 sm:space-x-8 -mb-px">
+                    <button id="tab-simulation" class="tab-button py-4 px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200 active">
+                        <span class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sliders-horizontal"><line x1="21" x2="3" y1="4" y2="4"/><line x1="21" x2="3" y1="12" y2="12"/><line x1="21" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+                            <span class="hidden sm:inline">Simulation</span>
+                        </span>
+                    </button>
+                    <button id="tab-dashboard" class="tab-button py-4 px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200">
+                        <span class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                            <span class="hidden sm:inline">Dashboard</span>
+                        </span>
+                    </button>
+                    <button id="tab-logistics" class="tab-button py-4 px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200">
+                        <span class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 12c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6z"/><path d="M12 2v20"/><path d="M12 20s-5-5-5-10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 5-5 10-5 10z"/></svg>
+                            <span class="hidden sm:inline">Logistics</span>
+                        </span>
+                    </button>
+                    <button id="tab-analytics" class="tab-button py-4 px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200">
+                        <span class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pie-chart"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/></svg>
+                            <span class="hidden sm:inline">Analytics</span>
+                        </span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- Simulation Tab Content (Default) -->
+                <div id="content-simulation" class="space-y-6">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white shadow-lg animate-fadeIn">
+                        <h2 class="text-xl sm:text-2xl font-bold mb-4">Warehouse Operations Simulation</h2>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                            <div class="flex gap-2">
+                                <button id="start-simulation" class="flex items-center gap-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 px-4 py-2 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Start
+                                </button>
+                                <button id="pause-simulation" class="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-500 px-4 py-2 rounded-lg transition-colors" disabled>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                    Pause
+                                </button>
+                                <button id="reset-simulation" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9.7"/><path d="M12 3v9"/></svg>
+                                    Reset
+                                </button>
+                            </div>
+                            <div class="sm:ml-auto mt-4 sm:mt-0 text-lg font-mono">
+                                Time: <span id="simulation-time">00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeIn">
+                        <!-- Stat Card: Orders Processed -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Orders Processed</p>
+                                    <p class="text-3xl font-bold text-blue-600" id="orders-processed">0</p>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package text-blue-500"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="m12 18.5-4.5-2.5"/><path d="M12 18.5V22"/><path d="m12 18.5 4.5-2.5"/><path d="m7.5 14.73 9-5.15"/></svg>
+                            </div>
+                        </div>
+                        <!-- Stat Card: Avg Delay -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Avg Delay (hrs)</p>
+                                    <p class="text-3xl font-bold text-green-600" id="avg-delay">12.5</p>
+                                    <p class="text-sm text-green-500" id="delay-improvement"></p>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock text-green-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                        </div>
+                        <!-- Stat Card: Throughput -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Throughput/hr</p>
+                                    <p class="text-3xl font-bold text-purple-600" id="throughput">0</p>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up text-purple-500"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                            </div>
+                        </div>
+                        <!-- Stat Card: Efficiency -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Efficiency</p>
+                                    <p class="text-3xl font-bold text-orange-600" id="efficiency">75.0%</p>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-activity text-orange-500"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg animate-fadeIn">
+                        <h3 class="text-lg font-semibold mb-4">Process Flow Status</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <!-- Process Status Card: Inbound -->
+                            <div class="text-center">
+                                <div id="inbound-status-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="m12 18.5-4.5-2.5"/><path d="M12 18.5V22"/><path d="m12 18.5 4.5-2.5"/><path d="m7.5 14.73 9-5.15"/></svg>
+                                </div>
+                                <p class="mt-2 font-medium">Inbound</p>
+                                <p id="inbound-status-text" class="text-sm text-gray-600">Idle</p>
+                            </div>
+                            <!-- Process Status Card: Storage -->
+                            <div class="text-center">
+                                <div id="storage-status-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="m12 18.5-4.5-2.5"/><path d="M12 18.5V22"/><path d="m12 18.5 4.5-2.5"/><path d="m7.5 14.73 9-5.15"/></svg>
+                                </div>
+                                <p class="mt-2 font-medium">Storage</p>
+                                <p id="storage-status-text" class="text-sm text-gray-600">Idle</p>
+                            </div>
+                            <!-- Process Status Card: Picking -->
+                            <div class="text-center">
+                                <div id="picking-status-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </div>
+                                <p class="mt-2 font-medium">Picking</p>
+                                <p id="picking-status-text" class="text-sm text-gray-600">Idle</p>
+                            </div>
+                            <!-- Process Status Card: Outbound -->
+                            <div class="text-center">
+                                <div id="outbound-status-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                                </div>
+                                <p class="mt-2 font-medium">Outbound</p>
+                                <p id="outbound-status-text" class="text-sm text-gray-600">Idle</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Tab Content -->
+                <div id="content-dashboard" class="hidden space-y-6">
+                    <div class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white shadow-lg animate-fadeIn">
+                        <h2 class="text-xl sm:text-2xl font-bold">Operations Dashboard</h2>
+                        <p class="text-sm">Real-time monitoring of attendance, productivity, and safety metrics.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4">Department Attendance</h3>
+                            <canvas id="attendance-chart" class="w-full" height="300"></canvas>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4">Department Efficiency</h3>
+                            <canvas id="efficiency-chart" class="w-full" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-lg animate-fadeIn">
+                        <h3 class="text-lg font-semibold mb-4">Hourly Productivity Trends</h3>
+                        <canvas id="productivity-chart" class="w-full" height="400"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Logistics Tab Content -->
+                <div id="content-logistics" class="hidden space-y-6">
+                    <div class="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg animate-fadeIn">
+                        <h2 class="text-xl sm:text-2xl font-bold">Logistics & Supply Chain</h2>
+                        <p class="text-sm">Real-time tracking of inbound and outbound shipments.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg animate-fadeIn">
+                        <h3 class="text-xl font-semibold mb-4">Live Logistics Map</h3>
+                        <div id="logistics-map">
+                            <!-- Animated truck icon -->
+                            <div class="truck-icon flex flex-col items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-truck-box text-white drop-shadow-md"><path d="M22 8.5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2v-4.5"/><path d="M18 8h3"/><path d="M12 2v20"/><path d="M12 8h2"/><path d="M12 12h2"/><path d="M12 16h2"/><path d="M10 20h2"/><path d="M4 20h2"/><path d="M18 20h2"/></svg>
+                                <span class="mt-1 text-xs text-white drop-shadow-md font-bold">Delivery #12345</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg animate-fadeIn">
+                        <h3 class="text-xl font-semibold mb-4">Supply Chain Overview</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="bg-gray-50 p-4 rounded-xl shadow-inner flex items-center gap-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-right text-green-500"><path d="M7 7h10v10"/><path d="M7 17l10-10"/></svg>
+                                <div>
+                                    <p class="text-gray-600 text-sm">Inbound Shipments</p>
+                                    <p class="text-2xl font-bold text-gray-800">15</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-xl shadow-inner flex items-center gap-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right text-red-500"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                                <div>
+                                    <p class="text-gray-600 text-sm">Outbound Shipments</p>
+                                    <p class="text-2xl font-bold text-gray-800">22</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-xl shadow-inner flex items-center gap-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package-plus text-blue-500"><path d="M5 12h14"/><path d="M12 5v14"/><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="m12 18.5-4.5-2.5"/><path d="M12 18.5V22"/><path d="m12 18.5 4.5-2.5"/><path d="m7.5 14.73 9-5.15"/></svg>
+                                <div>
+                                    <p class="text-gray-600 text-sm">Total Inventory</p>
+                                    <p class="text-2xl font-bold text-gray-800">45,678</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab Content -->
+                <div id="content-analytics" class="hidden space-y-6">
+                    <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-6 text-white shadow-lg animate-fadeIn">
+                        <h2 class="text-xl sm:text-2xl font-bold">Detailed Performance Analytics</h2>
+                        <p class="text-sm">In-depth analysis of key operational metrics over time.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4">Order Fulfilment Rate</h3>
+                            <canvas id="fulfilment-chart" class="w-full" height="300"></canvas>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4">Pick Accuracy Rate</h3>
+                            <canvas id="accuracy-chart" class="w-full" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-lg animate-fadeIn">
+                        <h3 class="text-lg font-semibold mb-4">Operational Costs Breakdown</h3>
+                        <canvas id="costs-chart" class="w-full" height="400"></canvas>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                            <h3 class="text-sm text-gray-600">Cost/Unit</h3>
+                            <p class="text-3xl font-bold text-blue-600 mt-2">$2.15</p>
+                            <p class="text-xs text-gray-500">vs. $2.30 last month</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                            <h3 class="text-sm text-gray-600">Labour Utilisation</h3>
+                            <p class="text-3xl font-bold text-green-600 mt-2">87%</p>
+                            <p class="text-xs text-gray-500">vs. 82% last month</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+                            <h3 class="text-sm text-gray-600">Maintenance Cost</h3>
+                            <p class="text-3xl font-bold text-purple-600 mt-2">$4,500</p>
+                            <p class="text-xs text-gray-500">vs. $5,100 last month</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="bg-white rounded-xl shadow-lg p-6 text-center text-gray-600">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900">Key Project Outcomes</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 border rounded-xl">
+                    <div class="text-2xl font-bold text-green-600">18%</div>
+                    <div class="text-sm text-gray-600">Reduction in Order Delays</div>
+                </div>
+                <div class="p-4 border rounded-xl">
+                    <div class="text-2xl font-bold text-blue-600">94.5%</div>
+                    <div class="text-sm text-gray-600">Safety Compliance Score</div>
+                </div>
+                <div class="p-4 border rounded-xl">
+                    <div class="text-2xl font-bold text-purple-600">89%</div>
+                    <div class="text-sm text-gray-600">Overall Audit Score</div>
+                </div>
+                <div class="p-4 border rounded-xl">
+                    <div class="text-2xl font-bold text-orange-600">15%</div>
+                    <div class="text-sm text-gray-600">Productivity Improvement</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('#tab-content > div');
+
+            // Data for the app
+            let simulationRunning = false;
+            let simulationTime = 0;
+            let intervalId = null;
+            const initialAvgDelay = 12.5;
+            let simulationData = {
+                ordersProcessed: 0,
+                averageDelay: initialAvgDelay,
+                throughput: 0,
+                efficiency: 75
+            };
+
+            const attendanceData = {
+                labels: ['Inbound', 'Storage', 'Picking', 'Outbound'],
+                datasets: [
+                    {
+                        label: 'Present',
+                        data: [85, 78, 120, 65],
+                        backgroundColor: '#10b981',
+                        borderRadius: 8
+                    },
+                    {
+                        label: 'Absent',
+                        data: [15, 8, 18, 12],
+                        backgroundColor: '#ef4444',
+                        borderRadius: 8
+                    }
+                ]
+            };
+
+            const efficiencyData = {
+                labels: ['Inbound', 'Storage', 'Picking', 'Outbound'],
+                datasets: [
+                    {
+                        label: 'Efficiency',
+                        data: [92, 88, 85, 90],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                        hoverOffset: 4,
+                        borderRadius: 8,
+                        spacing: 2,
+                    }
+                ]
+            };
+
+            const productivityData = {
+                labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+                datasets: [
+                    {
+                        label: 'Inbound',
+                        data: [45, 68, 72, 58, 75, 82, 45],
+                        borderColor: '#3b82f6',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Outbound',
+                        data: [38, 55, 62, 48, 68, 75, 55],
+                        borderColor: '#10b981',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Picking',
+                        data: [120, 180, 195, 165, 200, 220, 140],
+                        borderColor: '#f59e0b',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            };
+            
+            const fulfilmentData = {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+                datasets: [
+                    {
+                        label: 'Orders Fulfilled',
+                        data: [1200, 1450, 1600, 1550, 1800],
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            };
+
+            const accuracyData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    {
+                        label: 'Pick Accuracy %',
+                        data: [96.5, 97.2, 98.1, 97.9, 98.5, 99.1],
+                        borderColor: '#10b981',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#10b981',
+                        fill: false
+                    }
+                ]
+            };
+
+            const costsData = {
+                labels: ['Labor', 'Maintenance', 'Shipping', 'Overheads', 'Materials'],
+                datasets: [{
+                    data: [45, 15, 20, 10, 10],
+                    backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'],
+                    hoverOffset: 4
+                }]
+            };
+
+            // Chart instances
+            let attendanceChart = null;
+            let efficiencyChart = null;
+            let productivityChart = null;
+            let fulfilmentChart = null;
+            let accuracyChart = null;
+            let costsChart = null;
+
+            // Function to update the UI with simulation data
+            const updateSimulationUI = () => {
+                document.getElementById('simulation-time').textContent = formatTime(simulationTime);
+                document.getElementById('orders-processed').textContent = simulationData.ordersProcessed;
+                document.getElementById('avg-delay').textContent = simulationData.averageDelay.toFixed(1);
+                document.getElementById('throughput').textContent = simulationData.throughput;
+                document.getElementById('efficiency').textContent = `${simulationData.efficiency.toFixed(1)}%`;
+                
+                const improvementPercentage = ((initialAvgDelay - simulationData.averageDelay) / initialAvgDelay * 100).toFixed(1);
+                const delayImprovementElement = document.getElementById('delay-improvement');
+                if (improvementPercentage > 0) {
+                    delayImprovementElement.textContent = `↓ ${improvementPercentage}% improvement`;
+                    delayImprovementElement.classList.add('text-green-500');
+                    delayImprovementElement.classList.remove('hidden');
+                } else {
+                    delayImprovementElement.classList.add('hidden');
+                }
+
+                // Update process status indicators
+                const statusIconClasses = (isActive) => isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400';
+                const statusText = (isActive) => isActive ? 'Active' : 'Idle';
+                const processingText = (isProcessing) => isProcessing ? 'Processing' : 'Idle';
+                
+                document.getElementById('inbound-status-icon').className = `w-16 h-16 mx-auto rounded-full flex items-center justify-center ${statusIconClasses(simulationRunning)}`;
+                document.getElementById('inbound-status-text').textContent = statusText(simulationRunning);
+
+                document.getElementById('storage-status-icon').className = `w-16 h-16 mx-auto rounded-full flex items-center justify-center ${statusIconClasses(simulationRunning)}`;
+                document.getElementById('storage-status-text').textContent = processingText(simulationRunning);
+
+                document.getElementById('picking-status-icon').className = `w-16 h-16 mx-auto rounded-full flex items-center justify-center ${statusIconClasses(simulationRunning)}`;
+                document.getElementById('picking-status-text').textContent = statusText(simulationRunning);
+
+                document.getElementById('outbound-status-icon').className = `w-16 h-16 mx-auto rounded-full flex items-center justify-center ${statusIconClasses(simulationRunning)}`;
+                document.getElementById('outbound-status-text').textContent = statusText(simulationRunning);
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            // Simulation controls
+            const startSimulation = () => {
+                if (simulationRunning) return;
+                simulationRunning = true;
+                document.getElementById('start-simulation').disabled = true;
+                document.getElementById('pause-simulation').disabled = false;
+                
+                intervalId = setInterval(() => {
+                    simulationTime++;
+                    simulationData.ordersProcessed += Math.floor(Math.random() * 8) + 5;
+                    simulationData.averageDelay = Math.max(6.8, simulationData.averageDelay - 0.1 + (Math.random() - 0.5) * 0.5);
+                    simulationData.throughput += Math.floor(Math.random() * 15) + 20;
+                    simulationData.efficiency = Math.min(95, simulationData.efficiency + 0.2 + (Math.random() - 0.5) * 0.8);
+                    updateSimulationUI();
+                }, 1000);
+            };
+
+            const pauseSimulation = () => {
+                if (!simulationRunning) return;
+                simulationRunning = false;
+                document.getElementById('start-simulation').disabled = false;
+                document.getElementById('pause-simulation').disabled = true;
+                clearInterval(intervalId);
+            };
+
+            const resetSimulation = () => {
+                pauseSimulation();
+                simulationTime = 0;
+                simulationData = {
+                    ordersProcessed: 0,
+                    averageDelay: initialAvgDelay,
+                    throughput: 0,
+                    efficiency: 75
+                };
+                updateSimulationUI();
+            };
+
+            // Event Listeners for simulation controls
+            document.getElementById('start-simulation').addEventListener('click', startSimulation);
+            document.getElementById('pause-simulation').addEventListener('click', pauseSimulation);
+            document.getElementById('reset-simulation').addEventListener('click', resetSimulation);
+
+            // Tab functionality
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Deactivate all tabs and hide all content
+                    tabs.forEach(t => {
+                        t.classList.remove('active');
+                        t.querySelector('span').classList.remove('text-blue-600', 'border-blue-500');
+                    });
+                    tabContents.forEach(c => c.classList.add('hidden'));
+
+                    // Activate the clicked tab and show its content
+                    tab.classList.add('active');
+                    tab.querySelector('span').classList.add('text-blue-600', 'border-blue-500');
+                    const targetId = tab.id.replace('tab-', 'content-');
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                        
+                        // Render charts if needed
+                        if (targetId === 'content-dashboard') {
+                            renderCharts();
+                        } else if (targetId === 'content-analytics') {
+                            renderAnalyticsCharts();
+                        }
+                    }
+                });
+            });
+
+            // Function to render dashboard charts using Chart.js
+            const renderCharts = () => {
+                // Destroy old charts to prevent duplicates
+                if (attendanceChart) attendanceChart.destroy();
+                if (efficiencyChart) efficiencyChart.destroy();
+                if (productivityChart) productivityChart.destroy();
+
+                const commonOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            titleColor: '#1f2937',
+                            bodyColor: '#4b5563',
+                            cornerRadius: 8,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                };
+
+                // Bar Chart: Attendance
+                attendanceChart = new Chart(
+                    document.getElementById('attendance-chart'),
+                    {
+                        type: 'bar',
+                        data: attendanceData,
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                x: {
+                                    stacked: true
+                                },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    }
+                );
+
+                // Pie Chart: Efficiency
+                efficiencyChart = new Chart(
+                    document.getElementById('efficiency-chart'),
+                    {
+                        type: 'doughnut',
+                        data: efficiencyData,
+                        options: {
+                            ...commonOptions,
+                            plugins: {
+                                ...commonOptions.plugins,
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        font: {
+                                            family: 'Inter'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+                
+                // Line Chart: Productivity
+                productivityChart = new Chart(
+                    document.getElementById('productivity-chart'),
+                    {
+                        type: 'line',
+                        data: productivityData,
+                        options: {
+                            ...commonOptions,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    }
+                );
+            };
+
+            // Function to render analytics charts
+            const renderAnalyticsCharts = () => {
+                // Destroy old charts
+                if (fulfilmentChart) fulfilmentChart.destroy();
+                if (accuracyChart) accuracyChart.destroy();
+                if (costsChart) costsChart.destroy();
+
+                const commonOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            titleColor: '#1f2937',
+                            bodyColor: '#4b5563',
+                            cornerRadius: 8,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                };
+
+                // Bar Chart: Fulfilment
+                fulfilmentChart = new Chart(
+                    document.getElementById('fulfilment-chart'),
+                    {
+                        type: 'bar',
+                        data: fulfilmentData,
+                        options: commonOptions
+                    }
+                );
+                
+                // Line Chart: Accuracy
+                accuracyChart = new Chart(
+                    document.getElementById('accuracy-chart'),
+                    {
+                        type: 'line',
+                        data: accuracyData,
+                        options: commonOptions
+                    }
+                );
+
+                // Pie Chart: Costs
+                costsChart = new Chart(
+                    document.getElementById('costs-chart'),
+                    {
+                        type: 'pie',
+                        data: costsData,
+                        options: {
+                            ...commonOptions,
+                            plugins: {
+                                ...commonOptions.plugins,
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        font: {
+                                            family: 'Inter'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+            };
+            
+            // Initial rendering
+            updateSimulationUI();
+
+            // Handle window resize for charts
+            window.addEventListener('resize', () => {
+                if (!document.getElementById('content-dashboard').classList.contains('hidden')) {
+                    renderCharts();
+                }
+                if (!document.getElementById('content-analytics').classList.contains('hidden')) {
+                    renderAnalyticsCharts();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
